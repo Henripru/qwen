@@ -1,0 +1,7 @@
+build/
+
+# Claude Code personal overrides and session data
+.claude/settings.local.json
+.claude/history/
+.claude/sessions/
+CLAUDE.local.md
