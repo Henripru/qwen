@@ -1,88 +1,65 @@
-# Qwen-setup — Machine replication notes
+# Qwen-setup — Quickstart (happy path)
 
-This document collects the commands and steps used to reproduce the local development environment used in this project.
+This short guide focuses on the happy path: minimal, copy-and-paste steps to build and run the local server used by this project. It omits advanced git/submodule workflows.
 
 **Assumptions**
-- OS: Windows 10/11 (PowerShell used in scripts)
-- You have administrative rights to install drivers / toolkits
+- OS: Windows 10/11 with PowerShell available
+- You have admin rights to install drivers/toolchains if needed
 
-**1) System prerequisites**
-- Install Git and configure your user name/email.
-- Install Visual Studio Build Tools (C++ workload) or Visual Studio (required for MSVC toolchain).
-- Install CMake (>= 3.20) and optionally Ninja.
-- NVIDIA drivers + CUDA Toolkit (if you plan to use GPU/OpenCL backends).
-  - Verify: `nvcc --version` and `nvidia-smi`
-- Python 3.10+ and pip
-  - Verify: `python -V` and `pip -V`
+**1) Prerequisites**
+- Git (for cloning)
+- Visual Studio Build Tools (C++ workload) or Visual Studio — for MSVC `cl.exe`
+- CMake (>= 3.20) and optionally Ninja
+- NVIDIA drivers + CUDA Toolkit if you intend to use GPU acceleration
+  - Verify GPU/CUDA quickly:
+    - `nvidia-smi`
+    - `nvcc --version`
 
-**2) Hugging Face / model artifacts**
-- Install HF CLI and Python packages used for model download/formatting:
-  - `pip install --upgrade pip`
-  - `pip install huggingface-hub transformers accelerate safetensors`
-- Login to Hugging Face (if needed): `huggingface-cli login`
+**2) Model files (Hugging Face or other source)**
+- Obtain the model files you plan to use (e.g. from Hugging Face model page) and place them in a directory on your machine, for example `C:\models\my-model.safetensors`.
 
-**3) Clone repo and submodule notes**
-- This repository uses `llama.cpp` as a submodule. If you clone afresh:
+**3) Clone and build (happy path)**
+- Clone the repo and enter it:
   - `git clone <repo-url> qwen-setup`
   - `cd qwen-setup`
-  - `git submodule update --init --recursive`
 
-If you already cloned and built locally (and want to preserve build outputs) follow the approach used here: keep the local `llama.cpp` working tree in place, add a `.gitmodules` entry and register the submodule SHA in the parent repo before committing. (The project already contains `.gitmodules` and the submodule is pinned to a commit.)
-
-**4) Build (compile) steps**
-- There are helper PowerShell scripts in the repo:
-  - `compile.ps1` — runs the local build for the project
-  - `qwen-moe-turbo.ps1` — helper to start the qwen server wrapper
-
-- To run the compile script from PowerShell (recommended):
+- Recommended: use the included build script to compile the native server binaries:
   - `powershell -ExecutionPolicy Bypass -File .\compile.ps1`
 
-If you prefer to build `llama.cpp` manually (MSVC/Ninja example):
+- Manual build (if you prefer to run CMake directly):
   - `cd llama.cpp`
   - `mkdir build && cd build`
   - `cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release ..`
-  - `cmake --build . --config Release -j` 
+  - `cmake --build . --config Release -j`
 
-On success the server binary is typically at `llama.cpp\build\bin\llama-server.exe` (or similar path in `build/bin`).
+**4) Run the server (set port and model path)**
+- Start the server pointing at your model and desired port:
+  - `llama-server.exe --model C:\models\my-model.safetensors --port 9000`
 
-**5) Start the qwen / llama server and port config**
-- Example command to start the server (adjust model path and port):
-  - `llama-server.exe --model C:\path\to\model.safetensors --port 9000`
-- Or use the included helper (PowerShell):
-  - `powershell -ExecutionPolicy Bypass -File .\qwen-moe-turbo.ps1` 
-  - The script accepts options — open it to see flags for `--port` or `--model`.
-- To change the listening port, pass `--port <PORT>` to the server or edit the script to set the desired port.
+- Or use the repository helper:
+  - `powershell -ExecutionPolicy Bypass -File .\qwen-moe-turbo.ps1`
 
-**6) Verify GPU / OpenCL availability**
-- `nvidia-smi` — verifies driver and GPU presence
-- `nvcc --version` — verifies CUDA installation
-- `cmake --version` — verifies CMake
+- To change the port, pass `--port <PORT>` to the server or edit the script's parameter.
 
-**7) Configure Claude (Claude Code) to use a local model / local server**
-- Claude Code supports MCP servers and local tool calls. Project-level overrides are stored at `.claude/settings.local.json` (this repo contains a permissions allowlist used for automation checks).
-- To let Claude call local PowerShell checks and the local server, add or update the project `.claude/settings.local.json` with entries under `permissions.allow`. Example (already present in this project):
-  - `PowerShell(nvcc --version 2>&1)`
-  - `PowerShell(cmake --version 2>&1)`
-  - `PowerShell(nvidia-smi 2>&1)`
-  - `PowerShell(Test-Path build\\bin\\llama-server.exe)`
-- To register a local model endpoint as an MCP server in Claude Code you can add an `mcpServers` entry in your global or project `.claude/settings.json` / `settings.local.json` telling Claude how to call it. The exact format depends on your Claude installation; typical items include `name`, `url`, `auth` type and allowed scopes. (If you use Claude MCP connectors, add them via the Claude UI `/mcp` flow; for file-based configuration add the matching JSON object to `.claude/settings.json`.)
+**5) Quick verification**
+- Confirm the server binary exists (example path):
+  - `Test-Path .\llama.cpp\build\bin\llama-server.exe`
+- Curl or browser check (if server exposes HTTP):
+  - `curl http://localhost:9000/` or use the client that consumes the server API.
 
-**8) Common troubleshooting**
-- If build fails, check the Visual Studio C++ workload and that `cl.exe` is on PATH.
-- If CUDA/OpenCL features are desired but not required, try building without GPU acceleration first.
-- If `llama.cpp` shows up as tracked files in `git status` and you want to keep your local build but not commit it:
-  - `git rm --cached llama.cpp`
-  - Add `llama.cpp/` to `.gitignore` (or configure as a proper submodule with `.gitmodules` and `git submodule add`).
+**6) Configure Claude Code to use a local server (brief)**
+- The project contains `.claude/settings.local.json` used for local checks and limited automation permissions. If you want Claude to call local checks, ensure `permissions.allow` contains the necessary PowerShell checks (for example `nvidia-smi`, `cmake --version`, and `Test-Path` for the server binary).
+- To point Claude at a running local model endpoint, register an `mcpServers` entry in your Claude settings (via the Claude UI `/mcp` flow or by adding the appropriate JSON entry to `.claude/settings.json`).
 
-**9) Repro checklist for a fresh machine**
-1. Install Git, Visual Studio Build Tools, CMake, Python
-2. Install NVIDIA drivers + CUDA Toolkit (if using GPU)
-3. Clone repo and run `git submodule update --init --recursive`
-4. Install Python deps and Hugging Face CLI: `pip install huggingface-hub transformers accelerate safetensors`
-5. Run `powershell -ExecutionPolicy Bypass -File .\compile.ps1`
-6. Start server: `powershell -ExecutionPolicy Bypass -File .\qwen-moe-turbo.ps1` or run `llama-server.exe --port <PORT>`
+**7) Troubleshooting (short)**
+- Build failures: ensure Visual Studio C++ workload is installed and `cl.exe` is on PATH.
+- GPU/CUDA: confirm `nvidia-smi` and `nvcc` are present; otherwise build & run in CPU mode first.
 
-If you want I can: commit the staged `.gitmodules` and `.gitignore` changes, or produce a more detailed step-by-step that includes exact download URLs and Visual Studio/CUDA installer options.
+**Happy-path checklist**
+1. Install Git, Visual Studio Build Tools, CMake
+2. Place model files in `C:\models` or another folder
+3. Run `powershell -ExecutionPolicy Bypass -File .\compile.ps1`
+4. Start server: `llama-server.exe --model C:\models\my-model.safetensors --port 9000`
 
----
-Generated from project transcripts and local setup notes.
+If you want, I can now commit this simplified `README.md` for you.
+
