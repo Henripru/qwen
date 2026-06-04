@@ -1,5 +1,5 @@
 param(
-    [string]$Host = "127.0.0.1",
+    [string]$BindHost = "127.0.0.1",
     [int]$Port = 11434
 )
 
@@ -21,4 +21,4 @@ if (-not $model) {
     exit 1
 }
 
-& $llama -m $model -ngl 99 --no-mmap --jinja --host $Host --port $Port
+& $llama -m $model -ngl 99 --no-mmap --jinja --host $BindHost --port $Port

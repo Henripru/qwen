@@ -1,10 +1,10 @@
 param(
-    [string]$Host = "127.0.0.1",
-    [int]$Port    = 11434
+    [string]$BindHost = "127.0.0.1",
+    [int]$Port        = 11434
 )
 
 $model      = "qwen3-35b"
-$remoteBase = "http://${Host}:${Port}"
+$remoteBase = "http://${BindHost}:${Port}"
 
 # Optional: verify the remote server is reachable before launching
 try {
