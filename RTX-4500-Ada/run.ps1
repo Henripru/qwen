@@ -21,4 +21,14 @@ if (-not $model) {
     exit 1
 }
 
-& $llama -m $model -ngl 99 --no-mmap --jinja --host $BindHost --port $Port
+& $llama `
+  -m $model -ngl 99 `
+  -ctk q8_0 -ctv q8_0 `
+  --fit on --fit-ctx 40960 `
+  --ubatch-size 512 `
+  --parallel 1 `
+  --flash-attn on `
+  --cache-ram -1 `
+  --no-mmap `
+  --jinja `
+  --host $BindHost --port $Port
