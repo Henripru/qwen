@@ -1,26 +1,21 @@
-# compile.ps1 — Clone and build llama.cpp for RTX 4500 Ada Generation (Ada Lovelace SM_89)
-# Outputs llama-server.exe to .\build\bin\ where qwen-moe-turbo.ps1 expects it.
+# compile.ps1 — Build llama.cpp for RTX 4500 Ada Generation (Ada Lovelace SM_89)
+# Source: shared root-level llama.cpp submodule
+# Output: .\build\bin\Release\llama-server.exe (isolated from other GPU builds)
 #
 # Requirements: CUDA Toolkit 12.x, Visual Studio 2022, CMake, Git
 # Run once; re-run to rebuild after updates.
-#
-# Qwen3 MoE runtime tips (for qwen-moe-turbo.ps1):
-#   -fa 1            enable Flash Attention (requires GGML_CUDA_FA_ALL_QUANTS=ON below)
-#   --no-mmap        recommended for MoE models to avoid page-fault stalls
-#   --jinja          required for Qwen3 chat template
-#   -ngl 99          offload all layers to GPU
 
 $ErrorActionPreference = "Stop"
 
 $root      = $PSScriptRoot
-$srcDir    = Join-Path $root "llama.cpp"
+$srcDir    = Join-Path $root ".." "llama.cpp"
 $buildDir  = Join-Path $root "build"
 $serverExe = Join-Path $buildDir "bin\Release\llama-server.exe"
 
-# ── Verify CUDA 12.8 is on PATH ─────────────────────────────────────────────
+# ── Verify CUDA 12.x is on PATH ──────────────────────────────────────────────
 $nvcc = Get-Command nvcc -ErrorAction SilentlyContinue
 if (-not $nvcc) {
-    Write-Host "[compile] nvcc not found — install CUDA Toolkit 12.8 from developer.nvidia.com/cuda-toolkit-archive" -ForegroundColor Red
+    Write-Host "[compile] nvcc not found — install CUDA Toolkit 12.x from developer.nvidia.com/cuda-toolkit-archive" -ForegroundColor Red
     exit 1
 }
 $cudaVer = (nvcc --version 2>&1 | Select-String "release (\d+\.\d+)" | ForEach-Object { $_.Matches[0].Groups[1].Value })
@@ -29,14 +24,9 @@ if ($cudaVer -and [version]$cudaVer -lt [version]"12.0") {
     Write-Host "[compile] WARNING: CUDA 12.x or newer recommended for Ada Lovelace (SM_89). Please upgrade." -ForegroundColor Yellow
 }
 
-# ── Clone llama.cpp (skip if already present) ────────────────────────────────
-if (Test-Path (Join-Path $srcDir ".git")) {
-    Write-Host "[compile] llama.cpp already cloned — pulling latest..." -ForegroundColor Cyan
-    git -C $srcDir pull
-} else {
-    Write-Host "[compile] Cloning llama.cpp..." -ForegroundColor Cyan
-    git clone --depth 1 https://github.com/ggerganov/llama.cpp $srcDir
-}
+# ── Ensure submodule is initialised ──────────────────────────────────────────
+Write-Host "[compile] Updating llama.cpp submodule..." -ForegroundColor Cyan
+git -C (Join-Path $root "..") submodule update --init --recursive
 
 # ── CMake configure ──────────────────────────────────────────────────────────
 Write-Host ""

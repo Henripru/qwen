@@ -11,7 +11,9 @@ param(
     # Reasoning ON by default. Pass -ReasoningOff to disable on a per-launch basis.
     [switch]$ReasoningOff,
 
-    [int]$Port = 8080
+    [string]$Host = "127.0.0.1",
+
+    [int]$Port = 11434
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,7 +32,7 @@ if (-not (Test-Path $llama)) {
 # ----------------------------------------------------------------------
 $mmproj = ""
 if (-not $Model) {
-    $modelsDir = Join-Path $env:USERPROFILE "models"
+    $modelsDir = Join-Path $PSScriptRoot ".." "models"
     if (-not (Test-Path $modelsDir)) {
         Write-Host "[qwen-moe-turbo] models folder not found at $modelsDir - creating it" -ForegroundColor Yellow
         New-Item -ItemType Directory -Path $modelsDir -Force | Out-Null
@@ -234,7 +236,7 @@ Write-Host "[qwen-moe-turbo] model $([math]::Round($modelSizeGB,2)) GB -> --fit-
   -m $Model `
   @mmprojArgs `
   --alias $alias `
-  --host 0.0.0.0 --port $Port `
+  --host $Host --port $Port `
   --fit on --fit-target $fitTarget --fit-ctx 65536 `
   -c $Context `
   --parallel 1 `

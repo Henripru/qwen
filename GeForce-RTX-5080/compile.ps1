@@ -1,5 +1,6 @@
-# compile.ps1 — Clone and build llama.cpp for RTX 5080 (Blackwell SM_120)
-# Outputs llama-server.exe to .\build\bin\ where qwen-moe-turbo.ps1 expects it.
+# compile.ps1 — Build llama.cpp for RTX 5080 (Blackwell SM_120)
+# Source: shared root-level llama.cpp submodule
+# Output: .\build\bin\Release\llama-server.exe (isolated from other GPU builds)
 #
 # Requirements: CUDA Toolkit 12.8, Visual Studio 2022, CMake, Git
 # Run once; re-run to rebuild after updates.
@@ -7,7 +8,7 @@
 $ErrorActionPreference = "Stop"
 
 $root      = $PSScriptRoot
-$srcDir    = Join-Path $root "llama.cpp"
+$srcDir    = Join-Path $root ".." "llama.cpp"
 $buildDir  = Join-Path $root "build"
 $serverExe = Join-Path $buildDir "bin\Release\llama-server.exe"
 
@@ -23,14 +24,9 @@ if ($cudaVer -and [version]$cudaVer -ge [version]"13.0") {
     Write-Host "[compile] WARNING: CUDA 13.x may cause crashes on Blackwell with llama.cpp. Recommend 12.8." -ForegroundColor Yellow
 }
 
-# ── Clone llama.cpp (skip if already present) ────────────────────────────────
-if (Test-Path (Join-Path $srcDir ".git")) {
-    Write-Host "[compile] llama.cpp already cloned — pulling latest..." -ForegroundColor Cyan
-    git -C $srcDir pull
-} else {
-    Write-Host "[compile] Cloning llama.cpp..." -ForegroundColor Cyan
-    git clone --depth 1 https://github.com/ggerganov/llama.cpp $srcDir
-}
+# ── Ensure submodule is initialised ──────────────────────────────────────────
+Write-Host "[compile] Updating llama.cpp submodule..." -ForegroundColor Cyan
+git -C (Join-Path $root "..") submodule update --init --recursive
 
 # ── CMake configure ──────────────────────────────────────────────────────────
 Write-Host ""
