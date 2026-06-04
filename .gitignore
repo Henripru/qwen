@@ -5,3 +5,6 @@ build/
 .claude/history/
 .claude/sessions/
 CLAUDE.local.md
+
+# Models download folder
+models/
