@@ -12,6 +12,7 @@ Use Qwen 3.6 locally using Claude Code.
 
 **Steps**
 - Install Python dependencies (`.\install-dependencies.ps1`)
+- (Optional) Create a [Hugging Face](https://huggingface.co) account, generate an access token, and set `$env:HF_TOKEN="<your_token>"` for faster downloads
 - Download the model (`.\download.ps1`)
 - Compile llama.cpp (`.\compile.ps1`)
 - Start llama-server (`.\run.ps1`)
