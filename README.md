@@ -15,10 +15,4 @@ Use Qwen 3.6 locally using Claude Code.
 - Download the model (`.\download.ps1`)
 - Compile llama.cpp (`.\compile.ps1`)
 - Start llama-server (`.\run.ps1`)
-- Run local model
-```
-$env:ANTHROPIC_BASE_URL          = "http://localhost:11434"
-$env:ANTHROPIC_API_KEY           = "local"
-$env:CLAUDE_CODE_DISABLE_TELEMETRY = "1"
-claude --model Qwen_Qwen3.6-35B-A3B-IQ4_XS
-```
+- Run local model (`.\qwen.ps1`)
