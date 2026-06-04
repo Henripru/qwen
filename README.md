@@ -16,4 +16,5 @@ Use Qwen 3.6 locally using Claude Code.
 - Download the model (`.\download.ps1`)
 - Compile llama.cpp (`.\compile.ps1`)
 - Start llama-server (`.\run.ps1`)
+- Set the permanent PowerShell tool environment variable (`.\setup.ps1`)
 - Run local model (`.\qwen.ps1`)
